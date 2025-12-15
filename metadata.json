@@ -1,0 +1,5 @@
+{
+  "name": "SpookyEmail - Email Sequence Generator",
+  "description": "A powerful tool to generate personalized cold email sequences at scale using Gemini 2.5 Flash. Upload CSVs, map variables, and generate full campaigns in minutes.",
+  "requestFramePermissions": []
+}
