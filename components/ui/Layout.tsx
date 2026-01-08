@@ -46,39 +46,32 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, curren
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          <div 
+          <div
             onClick={() => setIsMobileMenuOpen(false)}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentStep === 1 ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
           >
             <span className="flex h-6 w-6 items-center justify-center rounded-full border border-current text-xs shrink-0">1</span>
             Upload CSV
           </div>
-          <div 
-             onClick={() => setIsMobileMenuOpen(false)}
-             className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentStep === 2 ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          <div
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentStep === 2 ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
           >
             <span className="flex h-6 w-6 items-center justify-center rounded-full border border-current text-xs shrink-0">2</span>
-            Define Template
+            Write Template
           </div>
-          <div 
-             onClick={() => setIsMobileMenuOpen(false)}
-             className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentStep === 3 ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          <div
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentStep === 3 ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
           >
             <span className="flex h-6 w-6 items-center justify-center rounded-full border border-current text-xs shrink-0">3</span>
-            Map Data
-          </div>
-          <div 
-             onClick={() => setIsMobileMenuOpen(false)}
-             className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentStep === 4 ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-          >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-current text-xs shrink-0">4</span>
             Preview
           </div>
-           <div 
-             onClick={() => setIsMobileMenuOpen(false)}
-             className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentStep === 5 ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          <div
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentStep === 4 ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-current text-xs shrink-0">5</span>
+            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-current text-xs shrink-0">4</span>
             Generate
           </div>
         </nav>

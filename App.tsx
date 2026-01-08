@@ -1,8 +1,20 @@
 import React, { useState } from 'react';
 import { Layout } from './components/ui/Layout';
-import { StepUpload, StepTemplate, StepMapping, StepPreview, StepGenerate } from './components/Steps';
-import { AppStep, ContactRow, MappingState, GeneratedEmail } from './types';
+import { StepUpload, StepTemplate, StepPreview, StepGenerate } from './components/Steps';
+import { AppStep, ContactRow, GeneratedEmail } from './types';
 import { downloadCSV } from './utils/csvHelper';
+
+// Sample data for "Try without CSV" feature
+const SAMPLE_DATA = {
+  headers: ["Name", "Company", "Role", "Industry"],
+  rows: [
+    { Name: "Sarah Chen", Company: "TechFlow Inc", Role: "VP of Engineering", Industry: "SaaS" },
+    { Name: "Marcus Johnson", Company: "GreenLeaf Energy", Role: "CEO", Industry: "Clean Energy" },
+    { Name: "Emily Rodriguez", Company: "HealthFirst", Role: "Head of Operations", Industry: "Healthcare" },
+    { Name: "David Kim", Company: "DataSync Labs", Role: "CTO", Industry: "Data Analytics" },
+    { Name: "Rachel Thompson", Company: "RetailPro", Role: "Director of Sales", Industry: "E-commerce" }
+  ]
+};
 
 const App: React.FC = () => {
   // App Flow State
@@ -12,7 +24,12 @@ const App: React.FC = () => {
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvData, setCsvData] = useState<ContactRow[]>([]);
   const [template, setTemplate] = useState<string>("");
-  const [mapping, setMapping] = useState<MappingState>({});
+
+  const loadSampleData = () => {
+    setCsvHeaders(SAMPLE_DATA.headers);
+    setCsvData(SAMPLE_DATA.rows);
+    setStep(AppStep.TEMPLATE);
+  };
 
   const handleGenerationFinish = (results: GeneratedEmail[][]) => {
     // Automatically download CSV on finish
@@ -22,32 +39,23 @@ const App: React.FC = () => {
   return (
     <Layout currentStep={step}>
       {step === AppStep.UPLOAD && (
-        <StepUpload 
+        <StepUpload
           onDataLoaded={(headers, data) => {
             setCsvHeaders(headers);
             setCsvData(data);
           }}
+          onUseSampleData={loadSampleData}
           next={() => setStep(AppStep.TEMPLATE)}
         />
       )}
 
       {step === AppStep.TEMPLATE && (
-        <StepTemplate 
+        <StepTemplate
           template={template}
           setTemplate={setTemplate}
-          next={() => setStep(AppStep.MAPPING)}
-          back={() => setStep(AppStep.UPLOAD)}
-        />
-      )}
-
-      {step === AppStep.MAPPING && (
-        <StepMapping 
           headers={csvHeaders}
-          template={template}
-          mapping={mapping}
-          setMapping={setMapping}
           next={() => setStep(AppStep.PREVIEW)}
-          back={() => setStep(AppStep.TEMPLATE)}
+          back={() => setStep(AppStep.UPLOAD)}
         />
       )}
 
@@ -55,17 +63,17 @@ const App: React.FC = () => {
         <StepPreview
           apiKey={process.env.GEMINI_API_KEY || ""}
           template={template}
-          mapping={mapping}
+          headers={csvHeaders}
           data={csvData}
           next={() => setStep(AppStep.GENERATE)}
-          back={() => setStep(AppStep.MAPPING)}
+          back={() => setStep(AppStep.TEMPLATE)}
         />
       )}
 
       {step === AppStep.GENERATE && (
         <StepGenerate
           template={template}
-          mapping={mapping}
+          headers={csvHeaders}
           data={csvData}
           back={() => setStep(AppStep.PREVIEW)}
           onFinish={handleGenerationFinish}

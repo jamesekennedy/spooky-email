@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, FileText, ArrowRight, ArrowLeft, Check, AlertCircle, Play, Download, Loader2, RefreshCw, Sparkles, Ghost, Key } from 'lucide-react';
-import { ContactRow, MappingState, GeneratedEmail } from '../types';
+import { ContactRow, GeneratedEmail } from '../types';
 import { parseCSV } from '../utils/csvHelper';
 import { generateEmailSequence } from '../services/geminiService';
 
 // --- STEP 1: UPLOAD ---
 interface StepUploadProps {
   onDataLoaded: (headers: string[], data: ContactRow[]) => void;
+  onUseSampleData: () => void;
   next: () => void;
 }
 
-export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, next }) => {
+export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampleData, next }) => {
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,19 +51,31 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, next }) =>
           Upload a CSV file containing your contact list. Make sure it has headers like Name, Company, Role, etc.
         </p>
 
-        <div className="relative inline-block w-full md:w-auto">
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          />
-          <button className="w-full md:w-auto px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-lg shadow-orange-900/20 transition-all flex items-center justify-center gap-2 mx-auto">
-            <FileText className="h-5 w-5" />
-            Select CSV File
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="relative inline-block w-full sm:w-auto">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <button className="w-full sm:w-auto px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-lg shadow-orange-900/20 transition-all flex items-center justify-center gap-2">
+              <FileText className="h-5 w-5" />
+              Select CSV File
+            </button>
+          </div>
+
+          <span className="text-slate-500 text-sm">or</span>
+
+          <button
+            onClick={onUseSampleData}
+            className="w-full sm:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-lg border border-slate-700 transition-all flex items-center justify-center gap-2"
+          >
+            <Sparkles className="h-5 w-5 text-orange-400" />
+            Try with Sample Data
           </button>
         </div>
-        
+
         {error && (
           <div className="mt-4 p-3 bg-red-900/20 text-red-400 text-sm rounded-lg inline-flex items-center gap-2 border border-red-900/30">
             <AlertCircle className="h-4 w-4" /> {error}
@@ -91,6 +104,7 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, next }) =>
 interface StepTemplateProps {
   template: string;
   setTemplate: (t: string) => void;
+  headers: string[];
   next: () => void;
   back: () => void;
 }
@@ -105,19 +119,38 @@ As a {{Role}}, you likely face challenges with...
 
 Let me know if you'd be open to a chat.`;
 
-export const StepTemplate: React.FC<StepTemplateProps> = ({ template, setTemplate, next, back }) => {
+export const StepTemplate: React.FC<StepTemplateProps> = ({ template, setTemplate, headers, next, back }) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   useEffect(() => {
     if (!template.trim()) {
       setTemplate(DEFAULT_TEMPLATE);
     }
   }, []);
 
+  const insertVariable = (header: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const variable = `{{${header}}}`;
+    const newTemplate = template.substring(0, start) + variable + template.substring(end);
+    setTemplate(newTemplate);
+
+    // Set cursor position after inserted variable
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + variable.length, start + variable.length);
+    }, 0);
+  };
+
   return (
     <div className="space-y-4 md:space-y-6 h-full flex flex-col">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
         <div>
           <h2 className="text-xl md:text-2xl font-bold text-slate-100">Draft your email spell</h2>
-          <p className="text-sm md:text-base text-slate-400">Use {'{{Variable}}'} syntax to insert dynamic content from your CSV.</p>
+          <p className="text-sm md:text-base text-slate-400">Click a variable below or type it to personalize your email.</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <button onClick={back} className="flex-1 md:flex-none px-4 py-2 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors border border-slate-800 md:border-transparent text-center">
@@ -129,12 +162,27 @@ export const StepTemplate: React.FC<StepTemplateProps> = ({ template, setTemplat
         </div>
       </div>
 
+      {/* Variable chips from CSV headers */}
+      <div className="flex flex-wrap gap-2">
+        <span className="text-xs text-slate-500 self-center mr-1">Your variables:</span>
+        {headers.map((header) => (
+          <button
+            key={header}
+            onClick={() => insertVariable(header)}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-orange-400 text-sm font-mono rounded-lg border border-slate-700 hover:border-orange-500/50 transition-all"
+          >
+            {`{{${header}}}`}
+          </button>
+        ))}
+      </div>
+
       <div className="flex-1 bg-slate-900 rounded-xl shadow-xl border border-slate-800 overflow-hidden flex flex-col min-h-[300px]">
         <div className="p-3 bg-slate-950 border-b border-slate-800 flex items-start md:items-center gap-2 text-xs text-slate-400 font-mono">
           <Ghost className="h-4 w-4 text-purple-500 shrink-0 mt-0.5 md:mt-0" />
           <span>Tip: Ask for a sequence by instructing: "Write a 3-email sequence..."</span>
         </div>
         <textarea
+          ref={textareaRef}
           className="flex-1 w-full p-4 md:p-6 focus:outline-none bg-slate-900 text-slate-100 font-mono text-sm resize-none placeholder-slate-600"
           placeholder="Write your email prompt here..."
           value={template}
@@ -145,111 +193,17 @@ export const StepTemplate: React.FC<StepTemplateProps> = ({ template, setTemplat
   );
 };
 
-// --- STEP 3: MAPPING ---
-interface StepMappingProps {
-  headers: string[];
-  template: string;
-  mapping: MappingState;
-  setMapping: (m: MappingState) => void;
-  next: () => void;
-  back: () => void;
-}
-
-export const StepMapping: React.FC<StepMappingProps> = ({ headers, template, mapping, setMapping, next, back }) => {
-  const [detectedVars, setDetectedVars] = useState<string[]>([]);
-
-  useEffect(() => {
-    const regex = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
-    const matches = Array.from(template.matchAll(regex), m => m[1]);
-    const unique = Array.from(new Set(matches));
-    setDetectedVars(unique);
-
-    const newMapping = { ...mapping };
-    unique.forEach(v => {
-      if (!newMapping[v]) {
-        const exactMatch = headers.find(h => h.toLowerCase() === v.toLowerCase());
-        if (exactMatch) newMapping[v] = exactMatch;
-      }
-    });
-    setMapping(newMapping);
-  }, [template, headers]);
-
-  const allMapped = detectedVars.every(v => mapping[v]);
-
-  return (
-    <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-100">Map Variables</h2>
-          <p className="text-sm md:text-base text-slate-400">Connect your template placeholders to CSV columns.</p>
-        </div>
-        <div className="flex gap-3 w-full md:w-auto">
-          <button onClick={back} className="flex-1 md:flex-none px-4 py-2 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors border border-slate-800 md:border-transparent text-center">
-            Back
-          </button>
-          <button 
-            onClick={next} 
-            disabled={!allMapped}
-            className={`flex-1 md:flex-none px-6 py-2 font-medium rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 ${allMapped ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-orange-900/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'}`}
-          >
-            Next <span className="hidden md:inline">Step</span> <ArrowRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-slate-900 rounded-xl shadow-xl border border-slate-800 overflow-hidden">
-        {detectedVars.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">
-            No variables detected in your template. Go back and add some using {'{{Variable}}'} syntax.
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-800">
-            {detectedVars.map(variable => (
-              <div key={variable} className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-800/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-orange-900/20 text-orange-500 flex items-center justify-center font-mono font-bold text-sm border border-orange-900/30 shrink-0">
-                    {'{'}
-                    {'}'}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-slate-200 truncate">{`{{${variable}}}`}</p>
-                    <p className="text-xs text-slate-500">Template Variable</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2 md:gap-4 pl-12 md:pl-0 w-full md:w-auto">
-                  <ArrowRight className="h-4 w-4 text-slate-600 hidden md:block" />
-                  <select
-                    className="block w-full md:w-64 rounded-md border-slate-700 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm p-2.5 bg-slate-950 text-slate-200"
-                    value={mapping[variable] || ""}
-                    onChange={(e) => setMapping({ ...mapping, [variable]: e.target.value })}
-                  >
-                    <option value="" disabled className="text-slate-500">Select CSV Column...</option>
-                    {headers.map(h => (
-                      <option key={h} value={h}>{h}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// --- STEP 4: PREVIEW ---
+// --- STEP 3: PREVIEW ---
 interface StepPreviewProps {
   apiKey: string;
   template: string;
-  mapping: MappingState;
+  headers: string[];
   data: ContactRow[];
   next: () => void;
   back: () => void;
 }
 
-export const StepPreview: React.FC<StepPreviewProps> = ({ apiKey, template, mapping, data, next, back }) => {
+export const StepPreview: React.FC<StepPreviewProps> = ({ apiKey, template, headers, data, next, back }) => {
   const [loading, setLoading] = useState(false);
   const [previewResult, setPreviewResult] = useState<GeneratedEmail[] | null>(null);
   const [sampleIndex, setSampleIndex] = useState(0);
@@ -261,13 +215,14 @@ export const StepPreview: React.FC<StepPreviewProps> = ({ apiKey, template, mapp
     setPreviewResult(null);
 
     const row = data[sampleIndex];
+    // Build vars directly from CSV headers
     const vars: Record<string, string> = {};
-    Object.entries(mapping).forEach(([key, colName]) => {
-      vars[key] = row[colName as string];
+    headers.forEach(header => {
+      vars[header] = row[header];
     });
 
     try {
-      const results = await generateEmailSequence(apiKey, template, vars, Object.keys(mapping));
+      const results = await generateEmailSequence(apiKey, template, vars, headers);
       setPreviewResult(results);
     } catch (err) {
       setError("Failed to generate preview. Check your API Key and try again.");
@@ -311,10 +266,10 @@ export const StepPreview: React.FC<StepPreviewProps> = ({ apiKey, template, mapp
               </button>
             </div>
             <div className="bg-slate-950 rounded-lg p-3 text-xs font-mono space-y-2 border border-slate-800 max-h-[200px] overflow-y-auto">
-              {Object.entries(mapping).map(([key, col]) => (
-                 <div key={key} className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-slate-800 pb-1 last:border-0 gap-1">
-                   <span className="text-slate-500">{`{{${key}}}`}</span>
-                   <span className="font-medium text-slate-300 text-left sm:text-right truncate w-full sm:max-w-[150px]">{data[sampleIndex][col as string]}</span>
+              {headers.map((header) => (
+                 <div key={header} className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-slate-800 pb-1 last:border-0 gap-1">
+                   <span className="text-slate-500">{`{{${header}}}`}</span>
+                   <span className="font-medium text-slate-300 text-left sm:text-right truncate w-full sm:max-w-[150px]">{data[sampleIndex][header]}</span>
                  </div>
               ))}
             </div>
@@ -380,16 +335,16 @@ export const StepPreview: React.FC<StepPreviewProps> = ({ apiKey, template, mapp
   );
 };
 
-// --- STEP 5: GENERATE (Batch) ---
+// --- STEP 4: GENERATE (Batch) ---
 interface StepGenerateProps {
   template: string;
-  mapping: MappingState;
+  headers: string[];
   data: ContactRow[];
   back: () => void;
   onFinish: (results: GeneratedEmail[][]) => void;
 }
 
-export const StepGenerate: React.FC<StepGenerateProps> = ({ template, mapping, data, back, onFinish }) => {
+export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, data, back, onFinish }) => {
   const [userApiKey, setUserApiKey] = useState(() =>
     localStorage.getItem("gemini_api_key") || ""
   );
@@ -408,25 +363,26 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, mapping, d
     handleSaveKey();
     setIsProcessing(true);
     const allResults: GeneratedEmail[][] = [];
-    
+
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
+      // Build vars directly from CSV headers
       const vars: Record<string, string> = {};
-      Object.entries(mapping).forEach(([key, colName]) => {
-        vars[key] = row[colName as string];
+      headers.forEach(header => {
+        vars[header] = row[header];
       });
 
       try {
-        const emailSequence = await generateEmailSequence(userApiKey, template, vars, Object.keys(mapping));
+        const emailSequence = await generateEmailSequence(userApiKey, template, vars, headers);
         allResults.push(emailSequence);
       } catch (e) {
         allResults.push([{ subject: "ERROR", body: "Failed to generate" }]);
       }
-      
+
       setResults([...allResults]);
       setProgress(Math.round(((i + 1) / data.length) * 100));
     }
-    
+
     setIsProcessing(false);
     setIsComplete(true);
     onFinish(allResults);
