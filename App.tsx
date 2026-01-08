@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/ui/Layout';
 import { StepUpload, StepTemplate, StepPreview, StepGenerate } from './components/Steps';
 import { AppStep, ContactRow, GeneratedEmail } from './types';
 import { downloadCSV } from './utils/csvHelper';
+import { initAnalytics, trackStepViewed } from './services/analytics';
 
 // Sample data for "Try without CSV" feature
 const SAMPLE_DATA = {
@@ -16,9 +17,26 @@ const SAMPLE_DATA = {
   ]
 };
 
+const STEP_NAMES: Record<AppStep, string> = {
+  [AppStep.UPLOAD]: 'Upload CSV',
+  [AppStep.TEMPLATE]: 'Write Template',
+  [AppStep.PREVIEW]: 'Preview',
+  [AppStep.GENERATE]: 'Generate',
+};
+
 const App: React.FC = () => {
   // App Flow State
   const [step, setStep] = useState<AppStep>(AppStep.UPLOAD);
+
+  // Initialize analytics on mount
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  // Track step changes
+  useEffect(() => {
+    trackStepViewed(step, STEP_NAMES[step]);
+  }, [step]);
 
   // Data State
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);

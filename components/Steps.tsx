@@ -3,6 +3,21 @@ import { Upload, FileText, ArrowRight, ArrowLeft, Check, AlertCircle, Play, Down
 import { ContactRow, GeneratedEmail } from '../types';
 import { parseCSV } from '../utils/csvHelper';
 import { generateEmailSequence } from '../services/geminiService';
+import {
+  trackCsvUploaded,
+  trackSampleDataUsed,
+  trackTemplateEdited,
+  trackVariableInserted,
+  trackPreviewGenerated,
+  trackPreviewFailed,
+  trackPaymentOptionViewed,
+  trackFreeOptionSelected,
+  trackPaidOptionSelected,
+  trackPaymentSubmitted,
+  trackPaymentCompleted,
+  trackGenerationStarted,
+  trackGenerationCompleted,
+} from '../services/analytics';
 
 // --- STEP 1: UPLOAD ---
 interface StepUploadProps {
@@ -28,11 +43,12 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
     reader.onload = (event) => {
       const text = event.target?.result as string;
       const { headers, data } = parseCSV(text);
-      
+
       if (headers.length === 0 || data.length === 0) {
         setError("CSV file appears to be empty or invalid.");
         return;
       }
+      trackCsvUploaded(data.length, headers.length);
       onDataLoaded(headers, data);
       next();
     };
@@ -68,7 +84,10 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
           <span className="text-slate-500 text-sm">or</span>
 
           <button
-            onClick={onUseSampleData}
+            onClick={() => {
+              trackSampleDataUsed();
+              onUseSampleData();
+            }}
             className="w-full sm:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-lg border border-slate-700 transition-all flex items-center justify-center gap-2"
           >
             <Sparkles className="h-5 w-5 text-orange-400" />
@@ -137,6 +156,7 @@ export const StepTemplate: React.FC<StepTemplateProps> = ({ template, setTemplat
     const variable = `{{${header}}}`;
     const newTemplate = template.substring(0, start) + variable + template.substring(end);
     setTemplate(newTemplate);
+    trackVariableInserted(header);
 
     // Set cursor position after inserted variable
     setTimeout(() => {
@@ -144,6 +164,15 @@ export const StepTemplate: React.FC<StepTemplateProps> = ({ template, setTemplat
       textarea.setSelectionRange(start + variable.length, start + variable.length);
     }, 0);
   };
+
+  // Track template edits (debounced)
+  const templateEditTracked = useRef(false);
+  useEffect(() => {
+    if (template && !templateEditTracked.current) {
+      templateEditTracked.current = true;
+      trackTemplateEdited();
+    }
+  }, [template]);
 
   return (
     <div className="space-y-4 md:space-y-6 h-full flex flex-col">
@@ -226,8 +255,11 @@ export const StepPreview: React.FC<StepPreviewProps> = ({ apiKey, template, head
       const results = await generateEmailSequence(apiKey, template, vars, headers);
       setPreviewResult(results);
       onEmailCountDetected(results.length);
+      trackPreviewGenerated(results.length);
     } catch (err) {
-      setError("Failed to generate preview. Check your API Key and try again.");
+      const errorMessage = "Failed to generate preview. Check your API Key and try again.";
+      setError(errorMessage);
+      trackPreviewFailed(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -368,6 +400,11 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
   const totalEmails = data.length * emailsPerContact;
   const totalPrice = (totalEmails * PRICE_PER_EMAIL).toFixed(2);
 
+  // Track payment options viewed on mount
+  useEffect(() => {
+    trackPaymentOptionViewed();
+  }, []);
+
   const handleSaveKey = () => {
     if (userApiKey.trim().length > 10) {
       localStorage.setItem("gemini_api_key", userApiKey);
@@ -375,11 +412,13 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
   };
 
   const handleMockPayment = async () => {
+    trackPaymentSubmitted(parseFloat(totalPrice), totalEmails);
     setPaymentProcessing(true);
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 1500));
     setPaymentProcessing(false);
     setHasPaid(true);
+    trackPaymentCompleted(parseFloat(totalPrice), totalEmails);
   };
 
   const formatCardNumber = (value: string) => {
@@ -407,6 +446,12 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
     const allResults: GeneratedEmail[][] = [];
     const apiKeyToUse = hasPaid ? (process.env.GEMINI_API_KEY || "") : userApiKey;
 
+    const startTime = Date.now();
+    trackGenerationStarted(data.length, emailsPerContact, hasPaid);
+
+    let successCount = 0;
+    let errorCount = 0;
+
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       // Build vars directly from CSV headers
@@ -418,13 +463,18 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
       try {
         const emailSequence = await generateEmailSequence(apiKeyToUse, template, vars, headers);
         allResults.push(emailSequence);
+        successCount++;
       } catch (e) {
         allResults.push([{ subject: "ERROR", body: "Failed to generate" }]);
+        errorCount++;
       }
 
       setResults([...allResults]);
       setProgress(Math.round(((i + 1) / data.length) * 100));
     }
+
+    const durationMs = Date.now() - startTime;
+    trackGenerationCompleted(successCount, errorCount, durationMs);
 
     setIsProcessing(false);
     setIsComplete(true);
@@ -457,6 +507,7 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
                     type="password"
                     value={userApiKey}
                     onChange={(e) => setUserApiKey(e.target.value)}
+                    onFocus={() => trackFreeOptionSelected()}
                     className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
                     placeholder="Your Gemini API Key..."
                   />
@@ -491,6 +542,7 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
                     type="text"
                     value={cardNumber}
                     onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                    onFocus={() => trackPaidOptionSelected()}
                     className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
                     placeholder="4242 4242 4242 4242"
                   />
