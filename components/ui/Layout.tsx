@@ -3,8 +3,8 @@ import { LogOut, LayoutDashboard, FileText, Settings, Ghost, Menu, X } from 'luc
 
 interface LayoutProps {
   children: React.ReactNode;
-  user: { username: string } | null;
-  onLogout: () => void;
+  user?: { username: string } | null;
+  onLogout?: () => void;
   currentStep: number;
 }
 
@@ -83,19 +83,23 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, curren
           </div>
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center gap-3 px-4 py-2">
-            <div className="h-8 w-8 rounded-full bg-orange-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
-              {user?.username.charAt(0).toUpperCase()}
+        {user && (
+          <div className="p-4 border-t border-slate-800">
+            <div className="flex items-center gap-3 px-4 py-2">
+              <div className="h-8 w-8 rounded-full bg-orange-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                {user.username.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-sm font-medium truncate text-slate-200">{user.username}</p>
+              </div>
+              {onLogout && (
+                <button onClick={onLogout} className="text-slate-400 hover:text-white transition-colors" title="Logout">
+                  <LogOut className="h-4 w-4" />
+                </button>
+              )}
             </div>
-            <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate text-slate-200">{user?.username}</p>
-            </div>
-            <button onClick={onLogout} className="text-slate-400 hover:text-white transition-colors" title="Logout">
-              <LogOut className="h-4 w-4" />
-            </button>
           </div>
-        </div>
+        )}
       </aside>
 
       {/* Main Content */}

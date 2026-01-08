@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, FileText, ArrowRight, ArrowLeft, Check, AlertCircle, Play, Download, Loader2, RefreshCw, Sparkles, Ghost } from 'lucide-react';
+import { Upload, FileText, ArrowRight, ArrowLeft, Check, AlertCircle, Play, Download, Loader2, RefreshCw, Sparkles, Ghost, Key } from 'lucide-react';
 import { ContactRow, MappingState, GeneratedEmail } from '../types';
 import { parseCSV } from '../utils/csvHelper';
 import { generateEmailSequence } from '../services/geminiService';
@@ -382,7 +382,6 @@ export const StepPreview: React.FC<StepPreviewProps> = ({ apiKey, template, mapp
 
 // --- STEP 5: GENERATE (Batch) ---
 interface StepGenerateProps {
-  apiKey: string;
   template: string;
   mapping: MappingState;
   data: ContactRow[];
@@ -390,13 +389,23 @@ interface StepGenerateProps {
   onFinish: (results: GeneratedEmail[][]) => void;
 }
 
-export const StepGenerate: React.FC<StepGenerateProps> = ({ apiKey, template, mapping, data, back, onFinish }) => {
+export const StepGenerate: React.FC<StepGenerateProps> = ({ template, mapping, data, back, onFinish }) => {
+  const [userApiKey, setUserApiKey] = useState(() =>
+    localStorage.getItem("gemini_api_key") || ""
+  );
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<GeneratedEmail[][]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  
+
+  const handleSaveKey = () => {
+    if (userApiKey.trim().length > 10) {
+      localStorage.setItem("gemini_api_key", userApiKey);
+    }
+  };
+
   const processBatch = async () => {
+    handleSaveKey();
     setIsProcessing(true);
     const allResults: GeneratedEmail[][] = [];
     
@@ -408,7 +417,7 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ apiKey, template, ma
       });
 
       try {
-        const emailSequence = await generateEmailSequence(apiKey, template, vars, Object.keys(mapping));
+        const emailSequence = await generateEmailSequence(userApiKey, template, vars, Object.keys(mapping));
         allResults.push(emailSequence);
       } catch (e) {
         allResults.push([{ subject: "ERROR", body: "Failed to generate" }]);
@@ -435,13 +444,35 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ apiKey, template, ma
             We are about to generate {data.length} email sequences. <br className="hidden md:inline"/>
             This might take a few minutes depending on the list size.
           </p>
+
+          {/* API Key Input */}
+          <div className="max-w-md mx-auto bg-slate-900 rounded-xl p-6 border border-slate-800">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Your Gemini API Key
+            </label>
+            <div className="relative">
+              <input
+                type="password"
+                value={userApiKey}
+                onChange={(e) => setUserApiKey(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600"
+                placeholder="AIzaSy..."
+              />
+              <Key className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Your key is stored in your browser for convenience.
+            </p>
+          </div>
+
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
              <button onClick={back} className="px-6 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors border border-slate-800 sm:border-transparent">
               Go Back
             </button>
-            <button 
+            <button
               onClick={processBatch}
-              className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-lg shadow-orange-900/20 hover:shadow-orange-900/40 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2"
+              disabled={userApiKey.trim().length < 10}
+              className="px-8 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg shadow-orange-900/20 hover:shadow-orange-900/40 disabled:shadow-none transition-all transform hover:-translate-y-1 disabled:transform-none flex items-center justify-center gap-2"
             >
               Start Generation <ArrowRight className="h-5 w-5" />
             </button>
