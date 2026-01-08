@@ -58,13 +58,23 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
 
   return (
     <div className="space-y-6">
+      {/* Hero headline */}
+      <div className="text-center mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-100 mb-3">
+          Generate Personalized Outreach with AI
+        </h1>
+        <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto">
+          Upload your contacts, write a prompt, and generate unique email sequences for each prospect in seconds.
+        </p>
+      </div>
+
       <div className="bg-slate-900 p-6 md:p-8 rounded-2xl shadow-xl border border-slate-800 text-center">
         <div className="h-16 w-16 bg-slate-800 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-700">
           <Upload className="h-8 w-8" />
         </div>
-        <h2 className="text-xl md:text-2xl font-semibold text-slate-100 mb-2">Upload your victims... err, contacts</h2>
+        <h2 className="text-xl md:text-2xl font-semibold text-slate-100 mb-2">Step 1: Upload your contacts</h2>
         <p className="text-slate-400 mb-8 max-w-md mx-auto text-sm md:text-base">
-          Upload a CSV file containing your contact list. Make sure it has headers like Name, Company, Role, etc.
+          Upload a CSV with columns like Name, Company, Role — or try with sample data.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
