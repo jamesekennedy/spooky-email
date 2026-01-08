@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvData, setCsvData] = useState<ContactRow[]>([]);
   const [template, setTemplate] = useState<string>("");
+  const [emailsPerContact, setEmailsPerContact] = useState<number>(1);
 
   const loadSampleData = () => {
     setCsvHeaders(SAMPLE_DATA.headers);
@@ -65,6 +66,7 @@ const App: React.FC = () => {
           template={template}
           headers={csvHeaders}
           data={csvData}
+          onEmailCountDetected={setEmailsPerContact}
           next={() => setStep(AppStep.GENERATE)}
           back={() => setStep(AppStep.TEMPLATE)}
         />
@@ -75,6 +77,7 @@ const App: React.FC = () => {
           template={template}
           headers={csvHeaders}
           data={csvData}
+          emailsPerContact={emailsPerContact}
           back={() => setStep(AppStep.PREVIEW)}
           onFinish={handleGenerationFinish}
         />

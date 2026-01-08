@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, FileText, ArrowRight, ArrowLeft, Check, AlertCircle, Play, Download, Loader2, RefreshCw, Sparkles, Ghost, Key } from 'lucide-react';
+import { Upload, FileText, ArrowRight, ArrowLeft, Check, AlertCircle, Play, Download, Loader2, RefreshCw, Sparkles, Ghost, Key, CreditCard } from 'lucide-react';
 import { ContactRow, GeneratedEmail } from '../types';
 import { parseCSV } from '../utils/csvHelper';
 import { generateEmailSequence } from '../services/geminiService';
@@ -199,11 +199,12 @@ interface StepPreviewProps {
   template: string;
   headers: string[];
   data: ContactRow[];
+  onEmailCountDetected: (count: number) => void;
   next: () => void;
   back: () => void;
 }
 
-export const StepPreview: React.FC<StepPreviewProps> = ({ apiKey, template, headers, data, next, back }) => {
+export const StepPreview: React.FC<StepPreviewProps> = ({ apiKey, template, headers, data, onEmailCountDetected, next, back }) => {
   const [loading, setLoading] = useState(false);
   const [previewResult, setPreviewResult] = useState<GeneratedEmail[] | null>(null);
   const [sampleIndex, setSampleIndex] = useState(0);
@@ -224,6 +225,7 @@ export const StepPreview: React.FC<StepPreviewProps> = ({ apiKey, template, head
     try {
       const results = await generateEmailSequence(apiKey, template, vars, headers);
       setPreviewResult(results);
+      onEmailCountDetected(results.length);
     } catch (err) {
       setError("Failed to generate preview. Check your API Key and try again.");
     } finally {
@@ -340,11 +342,14 @@ interface StepGenerateProps {
   template: string;
   headers: string[];
   data: ContactRow[];
+  emailsPerContact: number;
   back: () => void;
   onFinish: (results: GeneratedEmail[][]) => void;
 }
 
-export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, data, back, onFinish }) => {
+const PRICE_PER_EMAIL = 0.05;
+
+export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, data, emailsPerContact, back, onFinish }) => {
   const [userApiKey, setUserApiKey] = useState(() =>
     localStorage.getItem("gemini_api_key") || ""
   );
@@ -353,16 +358,54 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
+  // Payment state
+  const [hasPaid, setHasPaid] = useState(false);
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+
+  const totalEmails = data.length * emailsPerContact;
+  const totalPrice = (totalEmails * PRICE_PER_EMAIL).toFixed(2);
+
   const handleSaveKey = () => {
     if (userApiKey.trim().length > 10) {
       localStorage.setItem("gemini_api_key", userApiKey);
     }
   };
 
+  const handleMockPayment = async () => {
+    setPaymentProcessing(true);
+    // Simulate payment processing
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setPaymentProcessing(false);
+    setHasPaid(true);
+  };
+
+  const formatCardNumber = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 16);
+    return digits.replace(/(.{4})/g, '$1 ').trim();
+  };
+
+  const formatExpiry = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 4);
+    if (digits.length >= 2) {
+      return digits.slice(0, 2) + '/' + digits.slice(2);
+    }
+    return digits;
+  };
+
+  const isCardValid = cardNumber.replace(/\s/g, '').length === 16 &&
+    cardExpiry.length === 5 &&
+    cardCvc.length >= 3;
+
   const processBatch = async () => {
-    handleSaveKey();
+    if (!hasPaid) {
+      handleSaveKey();
+    }
     setIsProcessing(true);
     const allResults: GeneratedEmail[][] = [];
+    const apiKeyToUse = hasPaid ? (process.env.GEMINI_API_KEY || "") : userApiKey;
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -373,7 +416,7 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
       });
 
       try {
-        const emailSequence = await generateEmailSequence(userApiKey, template, vars, headers);
+        const emailSequence = await generateEmailSequence(apiKeyToUse, template, vars, headers);
         allResults.push(emailSequence);
       } catch (e) {
         allResults.push([{ subject: "ERROR", body: "Failed to generate" }]);
@@ -389,50 +432,127 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
   };
 
   return (
-    <div className="max-w-2xl mx-auto text-center space-y-8 pt-6 md:pt-10">
-      {!isProcessing && !isComplete && (
+    <div className="max-w-3xl mx-auto text-center space-y-8 pt-6 md:pt-10">
+      {!isProcessing && !isComplete && !hasPaid && (
         <div className="space-y-6">
           <div className="h-20 w-20 bg-orange-900/20 text-orange-500 rounded-full flex items-center justify-center mx-auto animate-pulse border border-orange-900/30">
             <Ghost className="h-10 w-10" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-100">Ready to Unleash?</h2>
           <p className="text-slate-400 text-base md:text-lg">
-            We are about to generate {data.length} email sequences. <br className="hidden md:inline"/>
-            This might take a few minutes depending on the list size.
+            Generate {data.length} contacts × {emailsPerContact} emails = <span className="text-orange-400 font-semibold">{totalEmails} total emails</span>
           </p>
 
-          {/* API Key Input */}
-          <div className="max-w-md mx-auto bg-slate-900 rounded-xl p-6 border border-slate-800">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Your Gemini API Key
-            </label>
-            <div className="relative">
-              <input
-                type="password"
-                value={userApiKey}
-                onChange={(e) => setUserApiKey(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600"
-                placeholder="AIzaSy..."
-              />
-              <Key className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+          <div className="grid md:grid-cols-2 gap-6 text-left">
+            {/* Option 1: Free with own API key */}
+            <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+              <div className="flex items-center gap-2 mb-4">
+                <Key className="h-5 w-5 text-slate-400" />
+                <h3 className="font-semibold text-slate-200">Use Your Own Key</h3>
+                <span className="ml-auto text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded">Free</span>
+              </div>
+              <div className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={userApiKey}
+                    onChange={(e) => setUserApiKey(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
+                    placeholder="Your Gemini API Key..."
+                  />
+                  <Key className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                </div>
+                <button
+                  onClick={processBatch}
+                  disabled={userApiKey.trim().length < 10}
+                  className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all disabled:text-slate-500 flex items-center justify-center gap-2"
+                >
+                  Generate Free <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <p className="text-xs text-slate-500 mt-2">
-              Your key is stored in your browser for convenience.
-            </p>
+
+            {/* Option 2: Pay to generate */}
+            <div className="bg-slate-900 rounded-xl p-6 border-2 border-orange-600/50 relative">
+              <div className="absolute -top-3 left-4 bg-orange-600 text-white text-xs font-semibold px-2 py-1 rounded">
+                Recommended
+              </div>
+              <div className="flex items-center gap-2 mb-4">
+                <CreditCard className="h-5 w-5 text-orange-400" />
+                <h3 className="font-semibold text-slate-200">Pay & Generate</h3>
+                <span className="ml-auto text-lg font-bold text-orange-400">${totalPrice}</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">
+                {data.length} contacts × {emailsPerContact} emails × $0.05
+              </p>
+              <div className="space-y-3">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                    className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
+                    placeholder="4242 4242 4242 4242"
+                  />
+                  <CreditCard className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={cardExpiry}
+                    onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
+                    className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
+                    placeholder="MM/YY"
+                  />
+                  <input
+                    type="text"
+                    value={cardCvc}
+                    onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
+                    placeholder="CVC"
+                  />
+                </div>
+                <button
+                  onClick={handleMockPayment}
+                  disabled={!isCardValid || paymentProcessing}
+                  className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-medium rounded-lg shadow-lg shadow-orange-900/20 transition-all disabled:shadow-none flex items-center justify-center gap-2"
+                >
+                  {paymentProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Processing...
+                    </>
+                  ) : (
+                    <>
+                      Pay ${totalPrice} & Generate <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-             <button onClick={back} className="px-6 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors border border-slate-800 sm:border-transparent">
-              Go Back
-            </button>
-            <button
-              onClick={processBatch}
-              disabled={userApiKey.trim().length < 10}
-              className="px-8 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg shadow-orange-900/20 hover:shadow-orange-900/40 disabled:shadow-none transition-all transform hover:-translate-y-1 disabled:transform-none flex items-center justify-center gap-2"
-            >
-              Start Generation <ArrowRight className="h-5 w-5" />
-            </button>
+          <button onClick={back} className="px-6 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+            Go Back
+          </button>
+        </div>
+      )}
+
+      {/* Payment successful - ready to generate */}
+      {!isProcessing && !isComplete && hasPaid && (
+        <div className="space-y-6">
+          <div className="h-20 w-20 bg-green-900/20 text-green-500 rounded-full flex items-center justify-center mx-auto border border-green-900/30">
+            <Check className="h-10 w-10" />
           </div>
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-100">Payment Successful!</h2>
+          <p className="text-slate-400 text-base md:text-lg">
+            Ready to generate {totalEmails} emails for {data.length} contacts.
+          </p>
+          <button
+            onClick={processBatch}
+            className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-lg shadow-orange-900/20 hover:shadow-orange-900/40 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 mx-auto"
+          >
+            Start Generation <ArrowRight className="h-5 w-5" />
+          </button>
         </div>
       )}
 
