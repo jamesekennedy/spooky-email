@@ -66,10 +66,15 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
         <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-4">
           Upload your contacts, write a prompt, and get a CSV of personalized emails ready to send with Gmail, Mailchimp, or any mail tool.
         </p>
-        {/* Social proof */}
-        <p className="text-slate-500 text-sm">
-          Trusted by sales teams who are tired of Clay's complexity
-        </p>
+        {/* Testimonial */}
+        <div className="max-w-xl mx-auto mt-2">
+          <p className="text-slate-400 text-sm italic">
+            "AI customised email is a must in 2026, but it's harder than it should be. This is the tool we use to get 20%+ open rates. See if you can beat me."
+          </p>
+          <p className="text-slate-500 text-xs mt-2">
+            — James Kennedy, CEO at ProcurementExpress.com
+          </p>
+        </div>
       </div>
 
       <div className="bg-slate-900 p-6 md:p-8 rounded-2xl shadow-xl border border-slate-800 text-center">
