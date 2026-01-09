@@ -112,15 +112,16 @@ export const trackPaymentSubmitted = (amount: number, emailCount: number) => {
 export const trackPaymentCompleted = (amount: number, emailCount: number) => {
   track('payment_completed', { amount, email_count: emailCount });
 
-  // Fire Google Ads conversion
-  if (GOOGLE_ADS_CONVERSION_ID && GOOGLE_ADS_CONVERSION_LABEL && window.gtag) {
-    window.gtag('event', 'conversion', {
-      send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_CONVERSION_LABEL}`,
+  // Push to GTM dataLayer for Google Ads conversion
+  if (window.dataLayer) {
+    window.dataLayer.push({
+      event: 'purchase',
       value: amount,
       currency: 'USD',
+      email_count: emailCount,
     });
     if (IS_DEV) {
-      console.log('[Google Ads] Conversion fired', { amount, currency: 'USD' });
+      console.log('[GTM] Purchase event pushed', { amount, currency: 'USD', emailCount });
     }
   }
 };
