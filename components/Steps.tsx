@@ -63,8 +63,12 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
         <h1 className="text-3xl md:text-4xl font-bold text-slate-100 mb-3">
           Generate Personalized Outreach with AI
         </h1>
-        <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto">
+        <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-4">
           Upload your contacts, write a prompt, and generate unique email sequences for each prospect in seconds.
+        </p>
+        {/* Social proof */}
+        <p className="text-slate-500 text-sm">
+          Trusted by sales teams who are tired of Clay's complexity
         </p>
       </div>
 
@@ -72,12 +76,33 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
         <div className="h-16 w-16 bg-slate-800 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-700">
           <Upload className="h-8 w-8" />
         </div>
-        <h2 className="text-xl md:text-2xl font-semibold text-slate-100 mb-2">Step 1: Upload your contacts</h2>
-        <p className="text-slate-400 mb-8 max-w-md mx-auto text-sm md:text-base">
-          Upload a CSV with columns like Name, Company, Role — or try with sample data.
+        <h2 className="text-xl md:text-2xl font-semibold text-slate-100 mb-2">See it in action</h2>
+        <p className="text-slate-400 mb-4 max-w-md mx-auto text-sm md:text-base">
+          Try with sample data to see how it works — no signup required.
         </p>
 
+        {/* Free badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-900/20 text-green-400 text-xs font-medium rounded-full border border-green-900/30 mb-6">
+          <span className="h-1.5 w-1.5 rounded-full bg-green-400"></span>
+          Free to use • No signup required
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          {/* Primary CTA - Sample Data */}
+          <button
+            onClick={() => {
+              trackSampleDataUsed();
+              onUseSampleData();
+            }}
+            className="w-full sm:w-auto px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-lg shadow-orange-900/20 transition-all flex items-center justify-center gap-2"
+          >
+            <Sparkles className="h-5 w-5" />
+            Try with Sample Data
+          </button>
+
+          <span className="text-slate-500 text-sm">or</span>
+
+          {/* Secondary CTA - Upload CSV */}
           <div className="relative inline-block w-full sm:w-auto">
             <input
               type="file"
@@ -85,24 +110,11 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
               onChange={handleFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            <button className="w-full sm:w-auto px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-lg shadow-orange-900/20 transition-all flex items-center justify-center gap-2">
+            <button className="w-full sm:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-lg border border-slate-700 transition-all flex items-center justify-center gap-2">
               <FileText className="h-5 w-5" />
-              Select CSV File
+              Upload Your CSV
             </button>
           </div>
-
-          <span className="text-slate-500 text-sm">or</span>
-
-          <button
-            onClick={() => {
-              trackSampleDataUsed();
-              onUseSampleData();
-            }}
-            className="w-full sm:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-lg border border-slate-700 transition-all flex items-center justify-center gap-2"
-          >
-            <Sparkles className="h-5 w-5 text-orange-400" />
-            Try with Sample Data
-          </button>
         </div>
 
         {error && (
@@ -112,17 +124,27 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
         )}
       </div>
 
+      {/* Before/After Example */}
       <div className="bg-slate-900 p-4 md:p-6 rounded-2xl shadow-xl border border-slate-800">
-        <h3 className="font-semibold text-slate-200 mb-4 flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-green-500"></span>
-          Sample CSV Format
-        </h3>
-        <div className="overflow-x-auto bg-slate-950 rounded-lg border border-slate-800 p-4">
-          <code className="text-xs md:text-sm font-mono text-slate-400 whitespace-pre">
-            Name,Company,Role,Pain_Point<br/>
-            John Doe,Acme Inc,CEO,"Struggling with slow sales cycles"<br/>
-            Jane Smith,TechCorp,VP Marketing,"Needs better lead attribution"
-          </code>
+        <h3 className="font-semibold text-slate-200 mb-4 text-center">From spreadsheet to personalized email in seconds</h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Before - CSV Row */}
+          <div className="bg-slate-950 rounded-lg border border-slate-800 p-4">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Your CSV Data</span>
+            <div className="mt-2 text-sm text-slate-300 space-y-1">
+              <p><span className="text-slate-500">Name:</span> Sarah Chen</p>
+              <p><span className="text-slate-500">Company:</span> TechFlow Inc</p>
+              <p><span className="text-slate-500">Role:</span> VP of Engineering</p>
+            </div>
+          </div>
+          {/* After - Generated Email */}
+          <div className="bg-slate-950 rounded-lg border border-orange-900/30 p-4">
+            <span className="text-xs font-medium text-orange-500 uppercase tracking-wide">Generated Email</span>
+            <div className="mt-2 text-sm text-slate-300">
+              <p className="font-medium text-slate-200 mb-1">Subject: Quick question for TechFlow's engineering team</p>
+              <p className="text-slate-400 text-xs leading-relaxed">Hi Sarah, I noticed TechFlow Inc is scaling its engineering org. As VP of Engineering, you're probably dealing with...</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
