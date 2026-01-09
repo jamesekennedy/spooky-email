@@ -34,6 +34,8 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          VITE_GOOGLE_ADS_CONVERSION_ID: ${{ secrets.VITE_GOOGLE_ADS_CONVERSION_ID }}
+          VITE_GOOGLE_ADS_CONVERSION_LABEL: ${{ secrets.VITE_GOOGLE_ADS_CONVERSION_LABEL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

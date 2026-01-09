@@ -1,9 +1,19 @@
 import posthog from 'posthog-js';
 
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
+const GOOGLE_ADS_CONVERSION_ID = import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID as string | undefined;
+const GOOGLE_ADS_CONVERSION_LABEL = import.meta.env.VITE_GOOGLE_ADS_CONVERSION_LABEL as string | undefined;
 const IS_DEV = import.meta.env.DEV;
 
+// Extend window type for gtag
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
 export const initAnalytics = () => {
+  // Initialize PostHog
   if (POSTHOG_KEY) {
     posthog.init(POSTHOG_KEY, {
       api_host: 'https://us.i.posthog.com',
@@ -11,7 +21,35 @@ export const initAnalytics = () => {
       persistence: 'localStorage',
     });
   }
+
+  // Initialize Google Ads gtag
+  if (GOOGLE_ADS_CONVERSION_ID) {
+    // Load gtag.js script
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_CONVERSION_ID}`;
+    document.head.appendChild(script);
+
+    // Initialize gtag
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function gtag(...args: unknown[]) {
+      window.dataLayer!.push(args);
+    };
+    window.gtag('js', new Date());
+    window.gtag('config', GOOGLE_ADS_CONVERSION_ID);
+
+    if (IS_DEV) {
+      console.log('[Google Ads] Initialized with ID:', GOOGLE_ADS_CONVERSION_ID);
+    }
+  }
 };
+
+// Extend window for dataLayer
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+  }
+}
 
 export const track = (event: string, properties?: Record<string, unknown>) => {
   if (POSTHOG_KEY) {
@@ -73,6 +111,18 @@ export const trackPaymentSubmitted = (amount: number, emailCount: number) => {
 
 export const trackPaymentCompleted = (amount: number, emailCount: number) => {
   track('payment_completed', { amount, email_count: emailCount });
+
+  // Fire Google Ads conversion
+  if (GOOGLE_ADS_CONVERSION_ID && GOOGLE_ADS_CONVERSION_LABEL && window.gtag) {
+    window.gtag('event', 'conversion', {
+      send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_CONVERSION_LABEL}`,
+      value: amount,
+      currency: 'USD',
+    });
+    if (IS_DEV) {
+      console.log('[Google Ads] Conversion fired', { amount, currency: 'USD' });
+    }
+  }
 };
 
 // Generation events
