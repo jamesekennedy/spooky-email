@@ -455,9 +455,8 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 1500));
     setPaymentProcessing(false);
+    setHasPaid(true);
     trackPaymentCompleted(parseFloat(totalPrice), totalEmails);
-    // Redirect to thank you page
-    window.location.hash = '#/thank-you';
   };
 
   const formatCardNumber = (value: string) => {
@@ -692,61 +691,6 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
           )}
         </div>
       )}
-    </div>
-  );
-};
-
-// --- THANK YOU PAGE ---
-export const ThankYou: React.FC = () => {
-  const handleStartOver = () => {
-    window.location.hash = '#/';
-    window.location.reload();
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="max-w-lg w-full text-center space-y-6">
-        <div className="h-20 w-20 bg-green-900/20 text-green-500 rounded-full flex items-center justify-center mx-auto border border-green-900/30">
-          <Check className="h-10 w-10" />
-        </div>
-
-        <h1 className="text-3xl md:text-4xl font-bold text-slate-100">
-          Payment Successful!
-        </h1>
-
-        <p className="text-slate-400 text-lg">
-          Thank you for your purchase. Your email generation credits are now active.
-        </p>
-
-        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 text-left space-y-3">
-          <h3 className="font-semibold text-slate-200">What happens next?</h3>
-          <ul className="text-slate-400 text-sm space-y-2">
-            <li className="flex items-start gap-2">
-              <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-              Your personalized emails will be generated using our API
-            </li>
-            <li className="flex items-start gap-2">
-              <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-              Results will download automatically as a CSV
-            </li>
-            <li className="flex items-start gap-2">
-              <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-              Import into Gmail, Mailchimp, or any email tool
-            </li>
-          </ul>
-        </div>
-
-        <button
-          onClick={handleStartOver}
-          className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-lg shadow-orange-900/20 transition-all"
-        >
-          Generate Your Emails
-        </button>
-
-        <p className="text-slate-500 text-xs">
-          Questions? Contact support@spookyemail.com
-        </p>
-      </div>
     </div>
   );
 };

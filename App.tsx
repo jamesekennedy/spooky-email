@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/ui/Layout';
-import { StepUpload, StepTemplate, StepPreview, StepGenerate, ThankYou } from './components/Steps';
+import { StepUpload, StepTemplate, StepPreview, StepGenerate } from './components/Steps';
 import { AppStep, ContactRow, GeneratedEmail } from './types';
 import { downloadCSV } from './utils/csvHelper';
 import { initAnalytics, trackStepViewed } from './services/analytics';
@@ -25,23 +25,14 @@ const STEP_NAMES: Record<AppStep, string> = {
 };
 
 const App: React.FC = () => {
-  // Routing - check for /thank-you path
-  const [currentPath, setCurrentPath] = useState(window.location.hash || '#/');
-
   // App Flow State
   const [step, setStep] = useState<AppStep>(AppStep.UPLOAD);
 
-  // Data State - must be declared before any conditional returns
+  // Data State
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvData, setCsvData] = useState<ContactRow[]>([]);
   const [template, setTemplate] = useState<string>("");
   const [emailsPerContact, setEmailsPerContact] = useState<number>(1);
-
-  useEffect(() => {
-    const handleHashChange = () => setCurrentPath(window.location.hash || '#/');
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
 
   // Initialize analytics on mount
   useEffect(() => {
@@ -50,15 +41,8 @@ const App: React.FC = () => {
 
   // Track step changes
   useEffect(() => {
-    if (!currentPath.includes('thank-you')) {
-      trackStepViewed(step, STEP_NAMES[step]);
-    }
-  }, [step, currentPath]);
-
-  // Render thank you page if on that route
-  if (currentPath === '#/thank-you') {
-    return <ThankYou />;
-  }
+    trackStepViewed(step, STEP_NAMES[step]);
+  }, [step]);
 
   const loadSampleData = () => {
     setCsvHeaders(SAMPLE_DATA.headers);
