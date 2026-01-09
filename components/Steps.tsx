@@ -64,7 +64,7 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
           Generate Personalized Outreach with AI
         </h1>
         <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-4">
-          Upload your contacts, write a prompt, and generate unique email sequences for each prospect in seconds.
+          Upload your contacts, write a prompt, and get a CSV of personalized emails ready to send with Gmail, Mailchimp, or any mail tool.
         </p>
         {/* Social proof */}
         <p className="text-slate-500 text-sm">
@@ -126,11 +126,11 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
 
       {/* Before/After Example */}
       <div className="bg-slate-900 p-4 md:p-6 rounded-2xl shadow-xl border border-slate-800">
-        <h3 className="font-semibold text-slate-200 mb-4 text-center">From spreadsheet to personalized email in seconds</h3>
+        <h3 className="font-semibold text-slate-200 mb-4 text-center">From spreadsheet to personalized emails in seconds</h3>
         <div className="grid md:grid-cols-2 gap-4">
           {/* Before - CSV Row */}
           <div className="bg-slate-950 rounded-lg border border-slate-800 p-4">
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Your CSV Data</span>
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Your Contact List</span>
             <div className="mt-2 text-sm text-slate-300 space-y-1">
               <p><span className="text-slate-500">Name:</span> Sarah Chen</p>
               <p><span className="text-slate-500">Company:</span> TechFlow Inc</p>
@@ -139,13 +139,14 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
           </div>
           {/* After - Generated Email */}
           <div className="bg-slate-950 rounded-lg border border-orange-900/30 p-4">
-            <span className="text-xs font-medium text-orange-500 uppercase tracking-wide">Generated Email</span>
+            <span className="text-xs font-medium text-orange-500 uppercase tracking-wide">CSV Output</span>
             <div className="mt-2 text-sm text-slate-300">
               <p className="font-medium text-slate-200 mb-1">Subject: Quick question for TechFlow's engineering team</p>
               <p className="text-slate-400 text-xs leading-relaxed">Hi Sarah, I noticed TechFlow Inc is scaling its engineering org. As VP of Engineering, you're probably dealing with...</p>
             </div>
           </div>
         </div>
+        <p className="text-center text-slate-500 text-xs mt-4">Download your results as a CSV and import into Gmail, Mailchimp, Instantly, or any email tool</p>
       </div>
     </div>
   );
