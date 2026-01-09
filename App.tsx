@@ -28,14 +28,20 @@ const App: React.FC = () => {
   // Routing - check for /thank-you path
   const [currentPath, setCurrentPath] = useState(window.location.hash || '#/');
 
+  // App Flow State
+  const [step, setStep] = useState<AppStep>(AppStep.UPLOAD);
+
+  // Data State - must be declared before any conditional returns
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [csvData, setCsvData] = useState<ContactRow[]>([]);
+  const [template, setTemplate] = useState<string>("");
+  const [emailsPerContact, setEmailsPerContact] = useState<number>(1);
+
   useEffect(() => {
     const handleHashChange = () => setCurrentPath(window.location.hash || '#/');
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
-
-  // App Flow State
-  const [step, setStep] = useState<AppStep>(AppStep.UPLOAD);
 
   // Initialize analytics on mount
   useEffect(() => {
@@ -53,12 +59,6 @@ const App: React.FC = () => {
   if (currentPath === '#/thank-you') {
     return <ThankYou />;
   }
-
-  // Data State
-  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-  const [csvData, setCsvData] = useState<ContactRow[]>([]);
-  const [template, setTemplate] = useState<string>("");
-  const [emailsPerContact, setEmailsPerContact] = useState<number>(1);
 
   const loadSampleData = () => {
     setCsvHeaders(SAMPLE_DATA.headers);
