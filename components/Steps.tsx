@@ -166,22 +166,23 @@ interface StepTemplateProps {
   back: () => void;
 }
 
-const DEFAULT_TEMPLATE = `Subject: Quick question about {{Company}}
+const buildDefaultTemplate = (headers: string[]) => `Write a 3-email outreach sequence for this contact.
 
-Hi {{Name}},
+Available data:
+${headers.map(h => `- ${h}: {{${h}}}`).join('\n')}
 
-I noticed that {{Company}} is currently expanding its engineering team.
+Email 1: Initial outreach - reference their role and company specifically
+Email 2: Follow-up with a value proposition or case study
+Email 3: Final gentle nudge with a clear CTA
 
-As a {{Role}}, you likely face challenges with...
-
-Let me know if you'd be open to a chat.`;
+Keep each email under 100 words. Be conversational, not salesy.`;
 
 export const StepTemplate: React.FC<StepTemplateProps> = ({ template, setTemplate, headers, next, back }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!template.trim()) {
-      setTemplate(DEFAULT_TEMPLATE);
+      setTemplate(buildDefaultTemplate(headers));
     }
   }, []);
 
