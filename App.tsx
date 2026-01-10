@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/ui/Layout';
-import { StepUpload, StepTemplate, StepPreview, StepGenerate } from './components/Steps';
+import { StepUpload, StepTemplate, StepPreview, StepGenerate, ThankYou } from './components/Steps';
 import { AppStep, ContactRow, GeneratedEmail } from './types';
 import { downloadCSV } from './utils/csvHelper';
-import { initAnalytics, trackStepViewed } from './services/analytics';
+import { initAnalytics, trackStepViewed, track } from './services/analytics';
 
 // Sample data for "Try without CSV" feature
 const SAMPLE_DATA = {
@@ -24,7 +24,31 @@ const STEP_NAMES: Record<AppStep, string> = {
   [AppStep.GENERATE]: 'Generate',
 };
 
+// Parse thank-you page params from URL
+const getThankYouParams = () => {
+  if (typeof window === 'undefined') return null;
+  if (window.location.pathname !== '/thank-you') return null;
+
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get('orderId');
+  const email = params.get('email');
+  const contacts = params.get('contacts');
+  const emails = params.get('emails');
+
+  if (!orderId || !email) return null;
+
+  return {
+    orderId,
+    email,
+    contactCount: parseInt(contacts || '0', 10),
+    totalEmails: parseInt(emails || '0', 10),
+  };
+};
+
 const App: React.FC = () => {
+  // Check if we're on the thank-you page
+  const [thankYouParams, setThankYouParams] = useState(getThankYouParams);
+
   // App Flow State
   const [step, setStep] = useState<AppStep>(AppStep.UPLOAD);
 
@@ -37,6 +61,16 @@ const App: React.FC = () => {
   // Initialize analytics on mount
   useEffect(() => {
     initAnalytics();
+
+    // Track thank-you page view for conversions
+    if (thankYouParams) {
+      track('thank_you_page_viewed', {
+        order_id: thankYouParams.orderId,
+        email: thankYouParams.email,
+        contact_count: thankYouParams.contactCount,
+        total_emails: thankYouParams.totalEmails,
+      });
+    }
   }, []);
 
   // Track step changes
@@ -56,6 +90,11 @@ const App: React.FC = () => {
   };
 
   const handleLogoClick = () => {
+    // If on thank-you page, navigate back to home
+    if (thankYouParams) {
+      window.location.href = '/';
+      return;
+    }
     setStep(AppStep.UPLOAD);
     setCsvHeaders([]);
     setCsvData([]);
@@ -63,9 +102,24 @@ const App: React.FC = () => {
     setEmailsPerContact(1);
   };
 
+  const handleStartNew = () => {
+    window.location.href = '/';
+  };
+
   return (
-    <Layout currentStep={step} onLogoClick={handleLogoClick}>
-      {step === AppStep.UPLOAD && (
+    <Layout currentStep={thankYouParams ? -1 : step} onLogoClick={handleLogoClick}>
+      {/* Thank You Page */}
+      {thankYouParams && (
+        <ThankYou
+          orderId={thankYouParams.orderId}
+          email={thankYouParams.email}
+          contactCount={thankYouParams.contactCount}
+          totalEmails={thankYouParams.totalEmails}
+          onStartNew={handleStartNew}
+        />
+      )}
+
+      {!thankYouParams && step === AppStep.UPLOAD && (
         <StepUpload
           onDataLoaded={(headers, data) => {
             setCsvHeaders(headers);
@@ -76,7 +130,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {step === AppStep.TEMPLATE && (
+      {!thankYouParams && step === AppStep.TEMPLATE && (
         <StepTemplate
           template={template}
           setTemplate={setTemplate}
@@ -86,7 +140,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {step === AppStep.PREVIEW && (
+      {!thankYouParams && step === AppStep.PREVIEW && (
         <StepPreview
           apiKey={process.env.GEMINI_API_KEY || ""}
           template={template}
@@ -98,7 +152,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {step === AppStep.GENERATE && (
+      {!thankYouParams && step === AppStep.GENERATE && (
         <StepGenerate
           template={template}
           headers={csvHeaders}

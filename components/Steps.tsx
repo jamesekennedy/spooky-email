@@ -488,8 +488,6 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
 
       if (response.ok) {
         const result = await response.json();
-        setOrderId(result.orderId);
-        setOrderSubmitted(true);
         trackPaymentCompleted(parseFloat(totalPrice), totalEmails);
 
         // Also send Zapier webhook
@@ -508,6 +506,16 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
         } catch (e) {
           console.error('Webhook failed:', e);
         }
+
+        // Navigate to thank-you page with order details
+        const params = new URLSearchParams({
+          orderId: result.orderId,
+          email: notifyEmail,
+          contacts: data.length.toString(),
+          emails: totalEmails.toString(),
+        });
+        window.location.href = `/thank-you?${params.toString()}`;
+        return;
       } else {
         throw new Error('Failed to create order');
       }
@@ -613,7 +621,7 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
 
   return (
     <div className="max-w-3xl mx-auto text-center space-y-8 pt-6 md:pt-10">
-      {!isProcessing && !isComplete && !hasPaid && (
+      {!isProcessing && !isComplete && !hasPaid && !orderSubmitted && (
         <div className="space-y-6">
           <div className="h-20 w-20 bg-orange-900/20 text-orange-500 rounded-full flex items-center justify-center mx-auto animate-pulse border border-orange-900/30">
             <Ghost className="h-10 w-10" />
@@ -871,6 +879,60 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
           )}
         </div>
       )}
+    </div>
+  );
+};
+
+// --- THANK YOU PAGE ---
+interface ThankYouProps {
+  orderId: string;
+  email: string;
+  contactCount: number;
+  totalEmails: number;
+  onStartNew: () => void;
+}
+
+export const ThankYou: React.FC<ThankYouProps> = ({ orderId, email, contactCount, totalEmails, onStartNew }) => {
+  return (
+    <div className="max-w-2xl mx-auto text-center space-y-8 pt-10 md:pt-16">
+      <div className="h-24 w-24 bg-green-900/20 text-green-500 rounded-full flex items-center justify-center mx-auto border border-green-900/30">
+        <Check className="h-12 w-12" />
+      </div>
+
+      <div className="space-y-3">
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-100">Order Confirmed!</h1>
+        <p className="text-slate-400 text-lg">
+          We're generating {totalEmails} emails for {contactCount} contacts.
+        </p>
+      </div>
+
+      <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+        <div className="flex items-center gap-4 justify-center mb-4">
+          <Mail className="h-8 w-8 text-orange-500" />
+          <div className="text-left">
+            <p className="text-slate-200 font-semibold text-lg">Check your inbox</p>
+            <p className="text-slate-400">We'll email your CSV to <span className="text-orange-400">{email}</span></p>
+          </div>
+        </div>
+        <div className="border-t border-slate-800 pt-4 mt-4">
+          <p className="text-slate-500 text-sm">
+            You can safely close this page. Generation typically takes 1-2 minutes per 10 contacts.
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800/50">
+        <p className="text-slate-500 text-xs font-mono">
+          Order ID: {orderId}
+        </p>
+      </div>
+
+      <button
+        onClick={onStartNew}
+        className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-lg shadow-orange-900/20 transition-colors"
+      >
+        Generate Another Batch
+      </button>
     </div>
   );
 };
