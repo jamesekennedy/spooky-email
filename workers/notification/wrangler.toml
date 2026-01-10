@@ -1,0 +1,6 @@
+name = "spooky-email-notifications"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# The POSTMARK_API_KEY should be set as a secret:
+# wrangler secret put POSTMARK_API_KEY
