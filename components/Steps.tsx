@@ -437,9 +437,6 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
 
   // Payment state
   const [hasPaid, setHasPaid] = useState(false);
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   // Notification state
@@ -464,16 +461,13 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
     }
   };
 
-  const handleMockPayment = async () => {
+  const handleStripeCheckout = async () => {
     trackPaymentSubmitted(parseFloat(totalPrice), totalEmails);
     setPaymentProcessing(true);
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
     try {
-      // Create order in database for server-side processing
-      const response = await fetch('https://spooky-email-orders.domains-f63.workers.dev', {
+      // Create Stripe Checkout session
+      const response = await fetch('https://spooky-email-stripe.domains-f63.workers.dev/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -488,9 +482,8 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
 
       if (response.ok) {
         const result = await response.json();
-        trackPaymentCompleted(parseFloat(totalPrice), totalEmails);
 
-        // Also send Zapier webhook
+        // Send Zapier webhook
         try {
           await fetch('https://hooks.zapier.com/hooks/catch/378316/ug3g39h/', {
             method: 'POST',
@@ -507,44 +500,22 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
           console.error('Webhook failed:', e);
         }
 
-        // Navigate to thank-you page with order details
-        const params = new URLSearchParams({
-          orderId: result.orderId,
-          email: notifyEmail,
-          contacts: data.length.toString(),
-          emails: totalEmails.toString(),
-        });
-        window.location.href = `/thank-you?${params.toString()}`;
+        // Redirect to Stripe Checkout
+        window.location.href = result.checkoutUrl;
         return;
       } else {
-        throw new Error('Failed to create order');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create checkout session');
       }
     } catch (error) {
-      console.error('Order creation failed:', error);
-      // Fall back to client-side generation
-      setHasPaid(true);
+      console.error('Checkout failed:', error);
+      alert('Payment setup failed. Please try again.');
     }
 
     setPaymentProcessing(false);
   };
 
-  const formatCardNumber = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 16);
-    return digits.replace(/(.{4})/g, '$1 ').trim();
-  };
-
-  const formatExpiry = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 4);
-    if (digits.length >= 2) {
-      return digits.slice(0, 2) + '/' + digits.slice(2);
-    }
-    return digits;
-  };
-
-  const isCardValid = isValidEmail(notifyEmail) &&
-    cardNumber.replace(/\s/g, '').length === 16 &&
-    cardExpiry.length === 5 &&
-    cardCvc.length >= 3;
+  const isEmailValid = isValidEmail(notifyEmail);
 
   const processBatch = async () => {
     if (!hasPaid) {
@@ -691,44 +662,21 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
                   />
                   <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
                 </div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
-                    placeholder="4242 4242 4242 4242"
-                  />
-                  <CreditCard className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    value={cardExpiry}
-                    onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
-                    className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
-                    placeholder="MM/YY"
-                  />
-                  <input
-                    type="text"
-                    value={cardCvc}
-                    onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
-                    placeholder="CVC"
-                  />
-                </div>
+                <p className="text-xs text-slate-400 mb-2">
+                  You'll be redirected to Stripe's secure checkout
+                </p>
                 <button
-                  onClick={handleMockPayment}
-                  disabled={!isCardValid || paymentProcessing}
+                  onClick={handleStripeCheckout}
+                  disabled={!isEmailValid || paymentProcessing}
                   className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-medium rounded-lg shadow-lg shadow-orange-900/20 transition-all disabled:shadow-none flex items-center justify-center gap-2"
                 >
                   {paymentProcessing ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Processing...
+                      <Loader2 className="h-4 w-4 animate-spin" /> Redirecting to Stripe...
                     </>
                   ) : (
                     <>
-                      Pay ${totalPrice} & Generate <ArrowRight className="h-4 w-4" />
+                      <CreditCard className="h-4 w-4" /> Pay ${totalPrice} with Stripe
                     </>
                   )}
                 </button>
