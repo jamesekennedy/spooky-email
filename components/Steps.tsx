@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, FileText, ArrowRight, ArrowLeft, Check, AlertCircle, Play, Download, Loader2, RefreshCw, Sparkles, Ghost, Key, CreditCard, Mail } from 'lucide-react';
+import { Upload, FileText, ArrowRight, ArrowLeft, Check, AlertCircle, AlertTriangle, Play, Download, Loader2, RefreshCw, Sparkles, Ghost, Key, CreditCard, Mail } from 'lucide-react';
 import { ContactRow, GeneratedEmail } from '../types';
 import { parseCSV } from '../utils/csvHelper';
 import { generateEmailSequence } from '../services/geminiService';
@@ -703,11 +703,52 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
               <div style={{ width: `${progress}%` }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-orange-600 transition-all duration-300"></div>
             </div>
             <p className="text-slate-400 text-sm md:text-base">
-               {isComplete 
-                 ? "All done! Your sequences are ready." 
+               {isComplete
+                 ? "All done! Your sequences are ready."
                  : `Generating ${results.length} of ${data.length} sequences...`}
             </p>
           </div>
+
+          {/* Warning and notification during processing */}
+          {isProcessing && (
+            <>
+              <div className="bg-amber-900/20 border border-amber-600/30 rounded-lg p-4 flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+                <div>
+                  <p className="text-amber-200 font-medium">Watch out!</p>
+                  <p className="text-amber-300/70 text-sm">Don't close this browser tab until generation is complete.</p>
+                </div>
+              </div>
+
+              {notifyEmail ? (
+                <div className="flex items-center justify-center gap-2 text-slate-400 text-sm">
+                  <Mail className="h-4 w-4" />
+                  <span>We'll email <span className="text-slate-200">{notifyEmail}</span> when complete, so you can check back on this tab.</span>
+                </div>
+              ) : (
+                <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800">
+                  <p className="text-slate-300 text-sm mb-3">Want to be notified when it's done?</p>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="email"
+                        value={notifyEmail}
+                        onChange={(e) => setNotifyEmail(e.target.value)}
+                        onBlur={() => {
+                          if (isValidEmail(notifyEmail)) {
+                            identifyUser(notifyEmail);
+                          }
+                        }}
+                        className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
+                        placeholder="your@email.com"
+                      />
+                      <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           {isComplete && (
             <div className="flex flex-col items-center gap-6">
