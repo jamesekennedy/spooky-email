@@ -175,7 +175,11 @@ Email 1: Initial outreach - reference their role and company specifically
 Email 2: Follow-up with a value proposition or case study
 Email 3: Final gentle nudge with a clear CTA
 
-Keep each email under 100 words. Be conversational, not salesy.`;
+Requirements:
+- Keep each email under 100 words
+- Use short paragraphs (2-3 sentences max per paragraph)
+- Add blank lines between paragraphs for readability
+- Be conversational, not salesy`;
 
 export const StepTemplate: React.FC<StepTemplateProps> = ({ template, setTemplate, headers, next, back }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
