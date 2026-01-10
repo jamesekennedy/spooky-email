@@ -128,7 +128,7 @@ export const trackPaymentCompleted = (amount: number, emailCount: number) => {
   // Fire Google Ads conversion directly via gtag
   if (window.gtag) {
     window.gtag('event', 'conversion', {
-      'send_to': 'AW-977435889/JW8FCLzcqeAbEPH5IdlD',
+      'send_to': 'AW-977435889/8pEYCJKZoeAbEPH5idID',
       'value': amount,
       'currency': 'USD',
       'transaction_id': `spooky-${Date.now()}`
