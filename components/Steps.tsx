@@ -446,6 +446,10 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
   const [notifyEmail, setNotifyEmail] = useState("");
   const [notificationSent, setNotificationSent] = useState(false);
 
+  // Order state (for paid server-side processing)
+  const [orderSubmitted, setOrderSubmitted] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
+
   const totalEmails = data.length * emailsPerContact;
   const totalPrice = (totalEmails * PRICE_PER_EMAIL).toFixed(2);
 
@@ -463,11 +467,57 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
   const handleMockPayment = async () => {
     trackPaymentSubmitted(parseFloat(totalPrice), totalEmails);
     setPaymentProcessing(true);
+
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 1500));
+
+    try {
+      // Create order in database for server-side processing
+      const response = await fetch('https://spooky-email-orders.domains-f63.workers.dev', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: notifyEmail,
+          template,
+          csvHeaders: headers,
+          csvData: data,
+          emailsPerContact,
+          amountCents: Math.round(parseFloat(totalPrice) * 100),
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setOrderId(result.orderId);
+        setOrderSubmitted(true);
+        trackPaymentCompleted(parseFloat(totalPrice), totalEmails);
+
+        // Also send Zapier webhook
+        try {
+          await fetch('https://hooks.zapier.com/hooks/catch/378316/ug3g39h/', {
+            method: 'POST',
+            body: JSON.stringify({
+              email: notifyEmail,
+              prompt: template,
+              csvHeaders: headers,
+              csvData: data,
+              contactCount: data.length,
+              emailsPerContact,
+            }),
+          });
+        } catch (e) {
+          console.error('Webhook failed:', e);
+        }
+      } else {
+        throw new Error('Failed to create order');
+      }
+    } catch (error) {
+      console.error('Order creation failed:', error);
+      // Fall back to client-side generation
+      setHasPaid(true);
+    }
+
     setPaymentProcessing(false);
-    setHasPaid(true);
-    trackPaymentCompleted(parseFloat(totalPrice), totalEmails);
   };
 
   const formatCardNumber = (value: string) => {
@@ -684,8 +734,39 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
         </div>
       )}
 
-      {/* Payment successful - ready to generate */}
-      {!isProcessing && !isComplete && hasPaid && (
+      {/* Order submitted - server-side processing */}
+      {orderSubmitted && (
+        <div className="space-y-6">
+          <div className="h-20 w-20 bg-green-900/20 text-green-500 rounded-full flex items-center justify-center mx-auto border border-green-900/30">
+            <Check className="h-10 w-10" />
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-100">Order Submitted!</h2>
+          <p className="text-slate-400 text-base md:text-lg">
+            We're generating {totalEmails} emails for {data.length} contacts.
+          </p>
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 max-w-md mx-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <Mail className="h-6 w-6 text-orange-500" />
+              <div className="text-left">
+                <p className="text-slate-200 font-medium">Check your inbox</p>
+                <p className="text-slate-400 text-sm">We'll email your CSV to <span className="text-orange-400">{notifyEmail}</span></p>
+              </div>
+            </div>
+            <p className="text-slate-500 text-xs">
+              You can safely close this tab. Generation typically takes 1-2 minutes per 10 contacts.
+            </p>
+          </div>
+          <button
+            onClick={back}
+            className="px-6 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors"
+          >
+            Generate Another Batch
+          </button>
+        </div>
+      )}
+
+      {/* Payment successful - ready to generate (fallback for client-side) */}
+      {!isProcessing && !isComplete && !orderSubmitted && hasPaid && (
         <div className="space-y-6">
           <div className="h-20 w-20 bg-green-900/20 text-green-500 rounded-full flex items-center justify-center mx-auto border border-green-900/30">
             <Check className="h-10 w-10" />
