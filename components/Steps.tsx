@@ -496,6 +496,25 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
     const allResults: GeneratedEmail[][] = [];
     const apiKeyToUse = hasPaid ? (process.env.GEMINI_API_KEY || "") : userApiKey;
 
+    // Send webhook for paid generations
+    if (hasPaid && notifyEmail) {
+      try {
+        await fetch('https://hooks.zapier.com/hooks/catch/378316/ug3g39h/', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: notifyEmail,
+            prompt: template,
+            csvHeaders: headers,
+            csvData: data,
+            contactCount: data.length,
+            emailsPerContact,
+          }),
+        });
+      } catch (e) {
+        console.error('Webhook failed:', e);
+      }
+    }
+
     const startTime = Date.now();
     trackGenerationStarted(data.length, emailsPerContact, hasPaid);
 
