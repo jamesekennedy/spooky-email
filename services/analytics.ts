@@ -60,6 +60,15 @@ export const track = (event: string, properties?: Record<string, unknown>) => {
   }
 };
 
+export const identifyUser = (email: string) => {
+  if (POSTHOG_KEY && email) {
+    posthog.identify(email, { email });
+  }
+  if (IS_DEV) {
+    console.log('[Analytics] Identified user:', email);
+  }
+};
+
 // Step tracking
 export const trackStepViewed = (stepNumber: number, stepName: string) => {
   track('step_viewed', { step_number: stepNumber, step_name: stepName });

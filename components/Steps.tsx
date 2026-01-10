@@ -17,6 +17,7 @@ import {
   trackPaymentCompleted,
   trackGenerationStarted,
   trackGenerationCompleted,
+  identifyUser,
 } from '../services/analytics';
 import { sendCompletionNotification, isValidEmail } from '../services/notificationService';
 
@@ -482,7 +483,8 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
     return digits;
   };
 
-  const isCardValid = cardNumber.replace(/\s/g, '').length === 16 &&
+  const isCardValid = isValidEmail(notifyEmail) &&
+    cardNumber.replace(/\s/g, '').length === 16 &&
     cardExpiry.length === 5 &&
     cardCvc.length >= 3;
 
@@ -598,10 +600,25 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
               <div className="space-y-3">
                 <div className="relative">
                   <input
+                    type="email"
+                    value={notifyEmail}
+                    onChange={(e) => setNotifyEmail(e.target.value)}
+                    onBlur={() => {
+                      if (isValidEmail(notifyEmail)) {
+                        identifyUser(notifyEmail);
+                      }
+                    }}
+                    onFocus={() => trackPaidOptionSelected()}
+                    className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
+                    placeholder="your@email.com"
+                  />
+                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                </div>
+                <div className="relative">
+                  <input
                     type="text"
                     value={cardNumber}
                     onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                    onFocus={() => trackPaidOptionSelected()}
                     className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
                     placeholder="4242 4242 4242 4242"
                   />
@@ -640,28 +657,6 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Email notification option */}
-          <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800 mt-2">
-            <div className="flex items-center gap-2 mb-3">
-              <Mail className="h-4 w-4 text-slate-400" />
-              <span className="text-sm text-slate-300">Get notified when complete</span>
-              <span className="text-xs text-slate-500">(optional)</span>
-            </div>
-            <div className="relative">
-              <input
-                type="email"
-                value={notifyEmail}
-                onChange={(e) => setNotifyEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-white placeholder-slate-600 text-sm"
-                placeholder="your@email.com"
-              />
-              <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-            </div>
-            {notifyEmail && !isValidEmail(notifyEmail) && (
-              <p className="text-xs text-red-400 mt-1">Please enter a valid email address</p>
-            )}
           </div>
 
           <button onClick={back} className="px-6 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
