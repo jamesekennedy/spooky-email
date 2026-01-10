@@ -5,10 +5,11 @@ interface LayoutProps {
   children: React.ReactNode;
   user?: { username: string } | null;
   onLogout?: () => void;
+  onLogoClick?: () => void;
   currentStep: number;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, currentStep }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onLogoClick, currentStep }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -29,7 +30,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, curren
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={onLogoClick}
+          >
             <Ghost className="h-6 w-6 text-orange-500" />
             <h1 className="text-xl font-bold tracking-tight text-white">SpookyEmail</h1>
           </div>
@@ -100,7 +104,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, curren
         
         {/* Mobile Header */}
         <div className="md:hidden p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900 shrink-0 z-10 shadow-md">
-           <div className="flex items-center gap-2">
+           <div
+             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+             onClick={onLogoClick}
+           >
             <Ghost className="h-6 w-6 text-orange-500" />
             <span className="font-bold text-white">SpookyEmail</span>
           </div>

@@ -55,8 +55,16 @@ const App: React.FC = () => {
     downloadCSV(csvData, results, `outbound-ai-results-${Date.now()}.csv`);
   };
 
+  const handleLogoClick = () => {
+    setStep(AppStep.UPLOAD);
+    setCsvHeaders([]);
+    setCsvData([]);
+    setTemplate("");
+    setEmailsPerContact(1);
+  };
+
   return (
-    <Layout currentStep={step}>
+    <Layout currentStep={step} onLogoClick={handleLogoClick}>
       {step === AppStep.UPLOAD && (
         <StepUpload
           onDataLoaded={(headers, data) => {
