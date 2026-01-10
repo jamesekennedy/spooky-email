@@ -124,6 +124,19 @@ export const trackPaymentCompleted = (amount: number, emailCount: number) => {
       console.log('[GTM] Purchase event pushed', { amount, currency: 'USD', emailCount });
     }
   }
+
+  // Fire Google Ads conversion directly via gtag
+  if (window.gtag) {
+    window.gtag('event', 'conversion', {
+      'send_to': 'AW-977435889/JW8FCLzcqeAbEPH5idID',
+      'value': amount,
+      'currency': 'USD',
+      'transaction_id': `spooky-${Date.now()}`
+    });
+    if (IS_DEV) {
+      console.log('[Google Ads] Conversion fired', { amount, currency: 'USD' });
+    }
+  }
 };
 
 // Generation events
