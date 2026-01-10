@@ -70,14 +70,10 @@ export const StepUpload: React.FC<StepUploadProps> = ({ onDataLoaded, onUseSampl
         </p>
 
         {/* Social Proof Stats */}
-        <div className="flex flex-wrap justify-center gap-6 mb-6">
+        <div className="flex flex-wrap justify-center gap-8 mb-6">
           <div className="text-center">
             <p className="text-2xl font-bold text-orange-500">10,000+</p>
             <p className="text-xs text-slate-500">Emails Generated</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-orange-500">500+</p>
-            <p className="text-xs text-slate-500">Happy Users</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-orange-500">60 sec</p>
