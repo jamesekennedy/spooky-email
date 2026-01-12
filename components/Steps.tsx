@@ -526,6 +526,20 @@ export const StepGenerate: React.FC<StepGenerateProps> = ({ template, headers, d
     trackPaymentOptionViewed();
   }, []);
 
+  // Warn user before closing tab during generation
+  useEffect(() => {
+    if (!isProcessing) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Modern browsers ignore custom messages, but this triggers the default warning
+      return '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isProcessing]);
+
   const handleSaveKey = () => {
     if (userApiKey.trim().length > 10) {
       localStorage.setItem("gemini_api_key", userApiKey);
