@@ -2,9 +2,11 @@ import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { GeneratedEmail } from "../types";
 
 const SYSTEM_INSTRUCTION = `
-You are an expert sales copywriter specializing in high-converting cold email sequences. 
+You are an expert sales copywriter specializing in high-converting cold email sequences.
 Your goal is to write personalized, engaging, and professional emails based on provided contact data and a template context.
 Ensure tone is natural, not robotic.
+
+IMPORTANT: Do NOT include any signature lines (e.g., "Best,", "Regards,", "Sincerely,") or placeholder text (e.g., "[Your Name]", "[My Name]", "[Company]") at the end of emails. End the email body with your final sentence or call-to-action.
 `;
 
 const responseSchema: Schema = {

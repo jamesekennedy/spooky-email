@@ -12,7 +12,9 @@ const SYSTEM_INSTRUCTION = `You are an expert sales copywriter specializing in c
 - Written in short paragraphs (2-3 sentences max)
 - Have blank lines between paragraphs for readability
 - Conversational, not salesy
-- Have compelling subject lines`;
+- Have compelling subject lines
+
+IMPORTANT: Do NOT include any signature lines (e.g., "Best,", "Regards,", "Sincerely,") or placeholder text (e.g., "[Your Name]", "[My Name]", "[Company]") at the end of emails. End the email body with your final sentence or call-to-action.`;
 
 async function generateEmailSequence(apiKey, template, contactData) {
   const response = await fetch(
