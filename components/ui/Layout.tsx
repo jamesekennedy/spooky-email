@@ -120,12 +120,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onLogo
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-5xl mx-auto h-full flex flex-col">
-             {children}
-          </div>
+          <div className="max-w-5xl mx-auto min-h-full flex flex-col">
+            <div className="flex-1">
+              {children}
+            </div>
 
-          {/* Footer */}
-          <footer className="mt-12 border-t border-slate-800 pt-8 pb-6 px-4">
+            {/* Footer */}
+            <footer className="mt-12 border-t border-slate-800 pt-8 pb-6">
             <div className="max-w-5xl mx-auto">
               {/* Compliance Statement */}
               <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-4 mb-6">
@@ -185,7 +186,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onLogo
                 © {new Date().getFullYear()} SRO Software Limited. All rights reserved.
               </div>
             </div>
-          </footer>
+            </footer>
+          </div>
         </div>
       </main>
     </div>
