@@ -123,6 +123,69 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onLogo
           <div className="max-w-5xl mx-auto h-full flex flex-col">
              {children}
           </div>
+
+          {/* Footer */}
+          <footer className="mt-12 border-t border-slate-800 pt-8 pb-6 px-4">
+            <div className="max-w-5xl mx-auto">
+              {/* Compliance Statement */}
+              <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-4 mb-6">
+                <p className="text-slate-400 text-xs leading-relaxed">
+                  <strong className="text-slate-300">Responsible Use:</strong> SpookyEmail is a sales engagement platform.
+                  Users are responsible for complying with GDPR, CAN-SPAM, and all applicable email regulations.
+                  SpookyEmail does not support spam, unsolicited bulk messaging, or any form of abuse.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-8 text-sm">
+                {/* Company Info */}
+                <div>
+                  <h4 className="font-semibold text-slate-200 mb-3">Company</h4>
+                  <div className="text-slate-500 space-y-1 text-xs">
+                    <p className="text-slate-400">SRO Software Limited</p>
+                    <p>Warrenstown House, Warrenstown</p>
+                    <p>Dunboyne, Co. Meath, Ireland</p>
+                    <p>Company No: 575907</p>
+                    <p className="pt-2">
+                      <a href="mailto:support@spookyemail.com" className="text-orange-400 hover:text-orange-300">
+                        support@spookyemail.com
+                      </a>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Legal Links */}
+                <div>
+                  <h4 className="font-semibold text-slate-200 mb-3">Legal</h4>
+                  <div className="space-y-2 text-xs">
+                    <a href="/privacy" className="block text-slate-400 hover:text-orange-400 transition-colors">
+                      Privacy Policy
+                    </a>
+                    <a href="/terms" className="block text-slate-400 hover:text-orange-400 transition-colors">
+                      Terms of Service
+                    </a>
+                    <a href="/security" className="block text-slate-400 hover:text-orange-400 transition-colors">
+                      Security & Data Protection
+                    </a>
+                  </div>
+                </div>
+
+                {/* Trust */}
+                <div>
+                  <h4 className="font-semibold text-slate-200 mb-3">Trust & Security</h4>
+                  <div className="text-slate-500 text-xs space-y-1">
+                    <p>🔒 256-bit SSL Encryption</p>
+                    <p>🇪🇺 GDPR Compliant</p>
+                    <p>☁️ Hosted on Cloudflare</p>
+                    <p>🛡️ No data retention</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-4 border-t border-slate-800 text-center text-xs text-slate-600">
+                © {new Date().getFullYear()} SRO Software Limited. All rights reserved.
+              </div>
+            </div>
+          </footer>
         </div>
       </main>
     </div>

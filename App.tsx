@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/ui/Layout';
 import { StepUpload, StepTemplate, StepPreview, StepGenerate, ThankYou } from './components/Steps';
+import { PrivacyPolicy, TermsOfService, SecurityPage } from './components/LegalPages';
 import { AppStep, ContactRow, GeneratedEmail } from './types';
 import { downloadCSV } from './utils/csvHelper';
 import { initAnalytics, trackStepViewed, track, trackPaymentCompleted } from './services/analytics';
@@ -24,11 +25,17 @@ const STEP_NAMES: Record<AppStep, string> = {
   [AppStep.GENERATE]: 'Generate',
 };
 
-// Check if we're on thank-you page
-const isThankYouPage = () => {
-  if (typeof window === 'undefined') return false;
-  return window.location.pathname === '/thank-you';
+// Route detection helpers
+const getRoute = () => {
+  if (typeof window === 'undefined') return '/';
+  return window.location.pathname;
 };
+
+const isThankYouPage = () => getRoute() === '/thank-you';
+const isPrivacyPage = () => getRoute() === '/privacy';
+const isTermsPage = () => getRoute() === '/terms';
+const isSecurityPage = () => getRoute() === '/security';
+const isLegalPage = () => isPrivacyPage() || isTermsPage() || isSecurityPage();
 
 // Fetch order details from Stripe session
 const fetchOrderFromSession = async (sessionId: string) => {
@@ -154,9 +161,14 @@ const App: React.FC = () => {
   };
 
   return (
-    <Layout currentStep={(thankYouParams || loadingOrder) ? -1 : step} onLogoClick={handleLogoClick}>
+    <Layout currentStep={(thankYouParams || loadingOrder || isLegalPage()) ? -1 : step} onLogoClick={handleLogoClick}>
+      {/* Legal Pages */}
+      {isPrivacyPage() && <PrivacyPolicy />}
+      {isTermsPage() && <TermsOfService />}
+      {isSecurityPage() && <SecurityPage />}
+
       {/* Thank You Page - Loading */}
-      {loadingOrder && (
+      {!isLegalPage() && loadingOrder && (
         <div className="max-w-2xl mx-auto text-center space-y-8 pt-10 md:pt-16">
           <div className="h-24 w-24 bg-orange-900/20 text-orange-500 rounded-full flex items-center justify-center mx-auto border border-orange-900/30 animate-pulse">
             <svg className="h-12 w-12 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -169,7 +181,7 @@ const App: React.FC = () => {
       )}
 
       {/* Thank You Page */}
-      {!loadingOrder && thankYouParams && (
+      {!isLegalPage() && !loadingOrder && thankYouParams && (
         <ThankYou
           orderId={thankYouParams.orderId}
           email={thankYouParams.email}
@@ -179,7 +191,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {!loadingOrder && !thankYouParams && step === AppStep.UPLOAD && (
+      {!isLegalPage() && !loadingOrder && !thankYouParams && step === AppStep.UPLOAD && (
         <StepUpload
           onDataLoaded={(headers, data) => {
             setCsvHeaders(headers);
@@ -190,7 +202,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {!loadingOrder && !thankYouParams && step === AppStep.TEMPLATE && (
+      {!isLegalPage() && !loadingOrder && !thankYouParams && step === AppStep.TEMPLATE && (
         <StepTemplate
           template={template}
           setTemplate={setTemplate}
@@ -200,7 +212,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {!loadingOrder && !thankYouParams && step === AppStep.PREVIEW && (
+      {!isLegalPage() && !loadingOrder && !thankYouParams && step === AppStep.PREVIEW && (
         <StepPreview
           apiKey={process.env.GEMINI_API_KEY || ""}
           template={template}
@@ -212,7 +224,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {!loadingOrder && !thankYouParams && step === AppStep.GENERATE && (
+      {!isLegalPage() && !loadingOrder && !thankYouParams && step === AppStep.GENERATE && (
         <StepGenerate
           template={template}
           headers={csvHeaders}
